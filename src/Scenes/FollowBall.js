@@ -7,12 +7,14 @@ class FollowBall extends Phaser.Scene {
         this.load.setPath("./assets/");
 
         this.load.image("playerBall", "blueball.png");
+        this.load.image("aiBall", "pinkball.png");
         this.load.image("defaultBall", "defaultball.png");
     }
 
 
     create() {
 
+        //Ball Data
         this.numBalls = 4;
         this.balls = [];
         this.positions = [200, 300, 400, 500]; //positions for balls
@@ -21,6 +23,10 @@ class FollowBall extends Phaser.Scene {
         this.swapSpeed = 200;
         this.speedIncrement = 200; //speed increase per round
         this.allowGuess = false;
+
+        //AI
+        this.randomGuessSpeed = 1000; //when the balls move too fast for the ai 
+        this.lastTargetSwap;
 
         //set balls and let them be clickable
         for (let i = 0; i < this.numBalls; i++) {
@@ -37,14 +43,21 @@ class FollowBall extends Phaser.Scene {
         this.targetBall = this.balls[Phaser.Math.Between(0, this.numBalls - 1)];
         this.targetBall.setTexture("playerBall");
 
+        //Randomly choose AI target's ball
+        this.aiTargetBall = this.balls[Phaser.Math.Between(0, this.numBalls - 1)];
+
+        // Ensure they aren't the same
+        while (this.aiTargetBall === this.targetBall) {
+            this.aiTargetBall = this.balls[Phaser.Math.Between(0, this.numBalls - 1)];
+        }
+        this.aiTargetBall.setTexture("aiBall");
+
         // After 1.5s, start the game!
         this.time.delayedCall(1500, () => {
             this.balls.forEach(ball => ball.setTexture('defaultBall')); // hide all
             this.StartSwapping();
         });
 
-
-        
     }
 
     //function for handling the swapping of the balls
@@ -55,6 +68,7 @@ class FollowBall extends Phaser.Scene {
 
         const doSwap = () => {
             if (swapsDone >= maxSwapsRound) { //when done allow guess
+                this.SimulateAIGuess();
                 this.allowGuess = true;
                 return;
             }
@@ -104,6 +118,7 @@ class FollowBall extends Phaser.Scene {
 
         this.allowGuess = false;
         this.targetBall.setTexture("playerBall");
+        this.aiTargetBall.setTexture("aiBall");
 
         if (ball === this.targetBall) {
             console.log("Correct!");
@@ -119,6 +134,45 @@ class FollowBall extends Phaser.Scene {
 
             this.PrepareNextRound();
         });
+    }
+
+    //AI
+    //AI's accuracy decays exponetially in realtion to the speed
+    GetAIAccuracy(currentSpeed) {
+         const initialAccuracy = 0.95;
+         const decayRate = 0.0005; 
+         return Math.max(0.1, initialAccuracy * Math.exp(-decayRate * currentSpeed));
+    }
+
+
+    //function calculates guess based on parameters
+    SimulateAIGuess() {
+        const aiAccuracy = this.GetAIAccuracy(this.swapSpeed);
+        const makesCorrectGuess = Math.random() < aiAccuracy;
+
+        let guess;
+        //if swaps too fast, ai guesses randomly 
+        if (this.swapSpeed >= this.randomGuessSpeed) {
+            console.log("AI overwhelmed — choosing at random.");
+            guess = Phaser.Utils.Array.GetRandom(this.balls);
+        }else if (makesCorrectGuess) {//ai guessed correctly
+            guess = this.aiTargetBall;
+            console.log("Ai guessed correctly!");
+        } else {//ai guessed wrong, calculates if it will guess the ball next from the correct ball
+            const confusedChance = 0.7;
+            if (Math.random() < confusedChance && this.lastTargetSwap) {
+                guess = this.lastTargetSwap.a === this.aiTargetBall
+                    ? this.lastTargetSwap.b
+                    : this.lastTargetSwap.a;
+            } else {
+                const wrongBalls = this.balls.filter(b => b !== this.aiTargetBall);
+                guess = Phaser.Utils.Array.GetRandom(wrongBalls);
+            }
+        }
+
+        console.log("AI guessed ball at index: " + this.balls.indexOf(guess));
+        console.log("Correct ball was at index: " + this.balls.indexOf(this.aiTargetBall));
+        this.aiGuess = guess;
     }
 
     //function for moving to next round
