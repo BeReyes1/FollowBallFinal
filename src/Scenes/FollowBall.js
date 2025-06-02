@@ -10,6 +10,14 @@ class FollowBall extends Phaser.Scene {
         this.load.image("aiBall", "pinkball.png");
         this.load.image("defaultBall", "defaultball.png");
         this.load.image("arrowDown", "navigation_s.png");
+        this.load.image("checkeredBackground", "checkeredbackground.png");
+
+        this.load.audio("swap", "card-shove-1.ogg");
+        this.load.audio("good", "jingles_SAX10.ogg");
+        this.load.audio("mistake", "jingles_SAX07.ogg");
+        this.load.audio("start", "jingles_PIZZI09.ogg");
+
+        this.load.multiatlas("kenny-particles", "kenny-particles.json");
     }
 
 
@@ -68,7 +76,15 @@ class FollowBall extends Phaser.Scene {
         this.aiIndicator.setVisible(false);
         this.aiIndicator.setDepth(1);
 
-        //Text score
+        this.background = this.add.image(0, 0, 'checkeredBackground').setOrigin(0).setDepth(-10);
+        this.background.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
+
+        //Text
+        this.chooseText = this.add.text(300, 150, 'Choose Now!', {
+            fontSize: '32px',
+            fill: '#0000ff'
+        }).setOrigin(0.5).setVisible(false);
+
         this.playerScoreText = this.add.text(20, 20, 'Player Score: 0', {
             fontSize: '24px',
             fill: '#0000ff',
@@ -80,6 +96,28 @@ class FollowBall extends Phaser.Scene {
             fill: '#ff00ff',
             fontFamily: 'Arial'
         });
+
+        //vfx
+        this.vfx = {};
+        this.vfx.correct = this.add.particles(0, 0, "kenny-particles", {
+            frame: ['star_01.png', 'star_09.png'],
+            scale: {start: 0.03, end: 0.15},
+            maxAliveParticles: 5,
+            lifespan: 600,
+            alpha: {start: 1, end: 0.1}, 
+        });
+
+        this.vfx.correct.stop();
+
+        this.vfx.wrong = this.add.particles(0, 0, "kenny-particles", {
+            frame: ['smoke_01.png', 'smoke_10.png'],
+            scale: {start: 0.03, end: 0.15},
+            maxAliveParticles: 5,
+            lifespan: 600,
+            alpha: {start: 1, end: 0.1}, 
+        });
+
+        this.vfx.wrong.stop();
 
         // After 1.5s, start the game!
         this.time.delayedCall(1500, () => {
@@ -97,6 +135,7 @@ class FollowBall extends Phaser.Scene {
 
         const doSwap = () => {
             if (swapsDone >= maxSwapsRound) { //when done allow guess
+                this.chooseText.setVisible(true);
                 this.SimulateAIGuess();
                 this.allowGuess = true;
                 return;
@@ -108,6 +147,8 @@ class FollowBall extends Phaser.Scene {
             do {
                 b = Phaser.Math.Between(0, this.numBalls - 1);
             } while (b === a);
+
+            this.sound.play("swap");
 
             const ballA = this.balls[a];
             const ballB = this.balls[b];
@@ -146,14 +187,18 @@ class FollowBall extends Phaser.Scene {
         if (!this.allowGuess) return;
 
         this.allowGuess = false;
+        this.chooseText.setVisible(false);
         this.targetBall.setTexture("playerBall");
         this.aiTargetBall.setTexture("aiBall");
 
         if (ball === this.targetBall) {
-            console.log("Correct!");
+            this.vfx.correct.explode(80, ball.x, ball.y);
+            this.sound.play("good");
+
             this.playerScore += this.roundScore;
         } else {
-            console.log("Incorrect");
+            this.vfx.wrong.explode(80, ball.x, ball.y);
+            this.sound.play("mistake");
         }
 
         this.UpdateScores();
@@ -253,6 +298,8 @@ class FollowBall extends Phaser.Scene {
             return;
 
         }
+
+        this.sound.play("start");
 
 
         this.time.delayedCall(300, () => {
