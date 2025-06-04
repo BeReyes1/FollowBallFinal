@@ -10,7 +10,7 @@ let config = {
     width: 1440,
     height: 900,
     backgroundColor: '#222222',
-    scene: [FollowBall]
+    scene: [MainMenu, FollowBall, Credits]
 }
 
 var cursors;

@@ -291,6 +291,13 @@ class FollowBall extends Phaser.Scene {
             }
 
             this.add.text(400, 300, "Press R to Restart", { fontSize: '32px', color: '#ffa500' }).setOrigin(0.5);
+            this.add.text(400, 350, "Press C for Credits", { fontSize: '32px', color: '#ffa500' }).setOrigin(0.5);
+
+            this.input.keyboard.once('keydown-C', () => {
+                this.scene.start('Credits'); 
+            });
+
+            this.add.text(400, 300, "Press R to Restart", { fontSize: '32px', color: '#ffa500' }).setOrigin(0.5);
             this.input.keyboard.once('keydown-R', () => {
                 this.scene.start('FollowBall'); 
             });
