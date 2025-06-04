@@ -230,11 +230,9 @@ class FollowBall extends Phaser.Scene {
         let guess;
         //if swaps too fast, ai guesses randomly 
         if (this.swapSpeed >= this.randomGuessSpeed) {
-            console.log("AI overwhelmed — choosing at random.");
             guess = Phaser.Utils.Array.GetRandom(this.balls);
         }else if (makesCorrectGuess) {//ai guessed correctly
             guess = this.aiTargetBall;
-            console.log("Ai guessed correctly!");
         } else {//ai guessed wrong, calculates if it will guess the ball next from the correct ball
             const confusedChance = 0.7;
             if (Math.random() < confusedChance && this.lastTargetSwap) {
@@ -251,8 +249,6 @@ class FollowBall extends Phaser.Scene {
             this.aiScore += this.roundScore;
         }
 
-        console.log("AI guessed ball at index: " + this.balls.indexOf(guess));
-        console.log("Correct ball was at index: " + this.balls.indexOf(this.aiTargetBall));
         this.aiGuess = guess;
         this.ShowAIPick(this.aiGuess);
     }
@@ -276,8 +272,6 @@ class FollowBall extends Phaser.Scene {
         //Hide balls+indicator
         this.balls.forEach(ball => ball.setTexture("defaultBall"));
         this.aiIndicator.setVisible(false);
-
-        console.log("Current Round" + this.currentRound);
 
         if (this.currentRound > this.totalRounds) {
              this.add.text(400, 200, "Game Over!", { fontSize: '64px', color: '#ffa500' }).setOrigin(0.5);
